@@ -1,0 +1,19 @@
+# Arquivos que NÃO devem ser enviados no deploy (a Vercel reinstala deps
+# e recompila o client). Vale tanto para `vercel` CLI quanto para o Git.
+
+# Dependências e builds locais
+node_modules
+client/node_modules
+server/node_modules
+client/dist
+
+# Segredos — NUNCA enviar
+.env
+.env.*
+server/.env
+!.env.example
+!server/.env.example
+
+# Diversos
+.vercel
+*.log

@@ -1,0 +1,14 @@
+/*
+ * Folha de estilo global.
+ * As três diretivas abaixo são substituídas pelo Tailwind em tempo de build:
+ *   base       → reset + estilos base dos elementos
+ *   components  → classes de componentes (e @apply)
+ *   utilities   → classes utilitárias (flex, p-4, text-center, ...)
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased;
+}

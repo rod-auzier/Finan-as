@@ -1,0 +1,10 @@
+# Normaliza fins de linha: no repositório sempre LF; no checkout, o Git
+# converte conforme o SO. Evita ruído de CRLF/LF entre Windows e o build
+# Linux da Vercel.
+* text=auto eol=lf
+
+# Arquivos binários — nunca normalizar.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
