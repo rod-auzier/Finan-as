@@ -15,11 +15,13 @@ despesas, categorização e visualização de saldo, com autenticação por usu�
 └──────────────┘                           └──────────────┘        └────────────┘
 ```
 
-- **Frontend (`client/`)** — SPA em React criada com Vite e estilizada com
-  Tailwind CSS. Consome a API via `axios`; o gráfico do Resumo usa `recharts`.
-  O roteamento usa `react-router-dom` e o estado de autenticação vive num
-  `AuthContext` — o **token JWT é salvo no `localStorage`** e injetado em
-  `Authorization: Bearer <token>` por um interceptor em `services/api.js`.
+- **Frontend (`client/`)** — SPA em React criada com Vite, **tema escuro**
+  com Tailwind CSS (cores como tokens/CSS variables — ver [Tema](#tema-design-system)),
+  layout responsivo (sidebar no desktop / bottom nav no celular — ver
+  [Responsividade](#responsividade)). Consome a API via `axios`; o gráfico do Resumo usa
+  `recharts`. O roteamento usa `react-router-dom` e o estado de autenticação
+  vive num `AuthContext` — o **token JWT é salvo no `localStorage`** e injetado
+  em `Authorization: Bearer <token>` por um interceptor em `services/api.js`.
   Em desenvolvimento, o Vite faz *proxy* de `/api` para o backend, evitando
   configuração de CORS.
 
@@ -67,16 +69,17 @@ Finanças/
 │   ├── index.html              # HTML base; carrega /src/main.jsx
 │   ├── package.json
 │   ├── vite.config.js          # Config do Vite + proxy /api → backend
-│   ├── tailwind.config.js      # Config do Tailwind (content, tema, plugins)
+│   ├── tailwind.config.js      # MAPEIA os tokens de cor (CSS vars) → classes; fontes; raios
 │   ├── postcss.config.js       # PostCSS: tailwindcss + autoprefixer
 │   ├── .env.example            # VITE_API_URL (opcional; normalmente nem precisa)
 │   └── src/
 │       ├── main.jsx            # Bootstrap do React (Router + AuthProvider)
 │       ├── App.jsx             # Mapa de rotas (públicas + privadas sob Layout)
-│       ├── index.css           # Diretivas @tailwind + estilos globais
+│       ├── index.css           # ★ TOKENS DE COR (:root) + base + regras do Recharts
 │       ├── lib/
 │       │   ├── format.js       # brl() e dataBR()
-│       │   └── constants.js    # CATEGORIAS_DESPESA + cor por categoria
+│       │   ├── constants.js    # CATEGORIAS_DESPESA + paleta do gráfico
+│       │   └── theme.js        # token('surface') → lê CSS var em runtime (p/ Recharts)
 │       ├── hooks/
 │       │   └── useRecurso.js   # hook genérico de carregamento de lista da API
 │       ├── services/
@@ -85,8 +88,10 @@ Finanças/
 │       │   └── AuthContext.jsx # Estado de auth (login/register/logout, localStorage)
 │       ├── components/
 │       │   ├── AuthForm.jsx                 # form e-mail+senha (Login e Registro)
-│       │   ├── Layout.jsx                   # cabeçalho + abas + <Outlet> (rotas privadas)
-│       │   ├── SummaryCard.jsx              # cartão de valor agregado (Resumo)
+│       │   ├── Layout.jsx                   # sidebar (>=md) / bottom nav (<md) + <Outlet>
+│       │   ├── ListaLancamentos.jsx         # tabela (>=md) / cards empilhados (<md)
+│       │   ├── Money.jsx                    # valor R$ em fonte mono + tabular-nums
+│       │   ├── SummaryCard.jsx              # cartão de valor agregado (size 'hero' | 'default')
 │       │   └── DespesasPorCategoriaChart.jsx # gráfico de barras Recharts
 │       └── pages/
 │           ├── Login.jsx       # Tela de login
@@ -190,11 +195,60 @@ apenas se for testar o deploy localmente com `vercel dev`.
 
 ---
 
+## Tema (design system)
+
+Tema **escuro**, definido por tokens. As 8 cores são declaradas **uma única
+vez** como CSS custom properties em [`client/src/index.css`](client/src/index.css)
+(bloco `:root`, todo comentado) e o [`tailwind.config.js`](client/tailwind.config.js)
+só as **mapeia** para classes utilitárias — nenhum componente tem cor hardcoded.
+
+| Token (`--color-…`) | Hex | Classe Tailwind | Papel |
+|---|---|---|---|
+| `bg`       | `#14181C` | `bg-bg`        | fundo da aplicação |
+| `surface`  | `#1C2227` | `bg-surface`   | cards, inputs, sidebar, cabeçalho de tabela |
+| `border`   | `#2A3138` | `border` / `divide-border` | divisórias finas (hairline) e contornos |
+| `fg`       | `#E8ECEF` | `text-fg`      | texto principal |
+| `muted`    | `#8B95A1` | `text-muted`   | texto secundário, labels, placeholders |
+| `positive` | `#3ECF8E` | `text-positive` | receitas, superávit, valores ≥ 0 |
+| `negative` | `#E2604A` | `text-negative` | despesas, déficit, valores < 0 |
+| `accent`   | `#D4A24C` | `bg-accent` / `text-accent` | ações (botões, links, nav ativa) |
+
+- **Tipografia**: Inter para textos/labels (`font-sans`); **JetBrains Mono**
+  para valores monetários e números (`font-mono` + `tabular-nums`, via a classe
+  `.num` ou o componente [`Money`](client/src/components/Money.jsx)) — dígitos
+  de largura fixa alinham as colunas das tabelas. Fontes carregadas no
+  [`index.html`](client/index.html).
+- **Estilo das tabelas**: divisórias hairline (`#2A3138`), cantos pouco
+  arredondados, sem sombras.
+- **Ajustar o tema no futuro**: edite só o bloco `:root` de `index.css`.
+
+---
+
+## Responsividade
+
+Breakpoints padrão do Tailwind (`sm` 640px, `md` 768px). O ponto de virada
+principal é **`md`** — abaixo dele o layout é mobile, os pontos de mudança
+estão comentados no código:
+
+| Elemento | `< md` (mobile) | `>= md` (desktop) |
+|---|---|---|
+| Navegação ([Layout.jsx](client/src/components/Layout.jsx)) | **bottom nav fixa** (3 itens) + barra fina no topo com "Sair" | **sidebar** lateral fixa (14rem) com "Sair" no rodapé |
+| Listas de Receitas/Despesas ([ListaLancamentos.jsx](client/src/components/ListaLancamentos.jsx)) | **cards empilhados** (label + valor em coluna) | **tabela** com cabeçalho, linhas hairline e rodapé de total |
+| Formulários (Receita/Despesa) | **1 coluna** | **2 colunas** (a partir de `sm`) |
+| Saldo Final (Resumo) | 32px | 36px (`sm`) → 48px (`md`) |
+
+Acessibilidade de toque: inputs em `text-base` (**16px** — evita o zoom
+automático do iOS ao focar); botões e itens de navegação com **≥ 44×44px**
+(`min-h-[44px]`, bottom nav 56px).
+
+---
+
 ## Uso das telas (frontend)
 
 O app tem **duas telas públicas** (Login e Registro) e, após autenticar,
-um layout com **três abas**: Receitas, Despesas e Resumo. O token JWT fica
-no `localStorage`; use "Sair" no canto superior direito para descartá-lo.
+a navegação para Receitas, Despesas e Resumo (sidebar no desktop, bottom
+nav no celular — ver [Responsividade](#responsividade)). O token JWT fica
+no `localStorage`; use "Sair" para descartá-lo.
 
 ### Registro (`/registro`)
 Informe **e-mail** e **senha** (mínimo 6 caracteres) e clique em *Cadastrar*.
@@ -208,22 +262,21 @@ mensagem de erro vinda da API. Ao entrar, vai para `/resumo`.
 ### Receitas (`/receitas`)
 - **Formulário**: `Fonte` (obrigatório), `Descrição` (opcional) e `Valor`
   (obrigatório, ≥ 0). *Adicionar receita* salva e a lista recarrega.
-- **Tabela**: uma linha por receita, com botão **✕** para excluir.
-- **Rodapé**: total somado de todas as receitas listadas.
+- **Lista**: tabela no desktop, cards no mobile; **✕** para excluir; total ao fim.
 
 ### Despesas (`/despesas`)
 - **Formulário**: `Descrição` (obrigatório), `Categoria` (select fixo:
   Utilidades, Alimentação, Transporte, Saúde, Lazer, Outros), `Valor`
   (obrigatório, ≥ 0) e `Vencimento` (data, opcional).
-- **Tabela**: descrição, categoria, vencimento (`—` quando vazio) e valor,
-  com **✕** para excluir.
-- **Rodapé**: total somado das despesas.
+- **Lista**: descrição, categoria, vencimento (`—` quando vazio) e valor;
+  tabela no desktop, cards no mobile; **✕** para excluir; total ao fim.
 
 ### Resumo (`/resumo`)
-- **3 cartões**: *Total de Receitas* (verde), *Total de Despesas* (vermelho)
-  e *Saldo Final* (com borda destacada).
-- **Indicador**: selo **▲ Superávit** (verde) quando `saldo ≥ 0` ou
-  **▼ Déficit** (vermelho) quando `saldo < 0`.
+- **Saldo Final** em destaque: número grande em fonte monoespaçada, verde se
+  ≥ 0 e vermelho se < 0 — é o elemento principal da tela.
+- Logo abaixo, o **indicador** **▲ Superávit** (verde) / **▼ Déficit** (vermelho).
+- Ao lado, dois cards menores: *Total de Receitas* (verde) e *Total de
+  Despesas* (vermelho).
 - **Gráfico (Recharts)**: barras com o total gasto por categoria de despesa;
   categorias sem gasto são omitidas.
 

@@ -3,18 +3,19 @@
  *
  * Responsabilidades:
  *  - buscar os totais do backend (GET /api/resumo);
- *  - buscar a lista de despesas (GET /api/despesas) para alimentar o
- *    gráfico de despesas por categoria;
- *  - exibir 3 cartões: Total de Receitas, Total de Despesas e Saldo Final;
- *  - exibir um indicador visual: "Superávit" (verde) quando saldo ≥ 0,
- *    "Déficit" (vermelho) quando saldo < 0;
+ *  - buscar a lista de despesas (GET /api/despesas) para o gráfico;
+ *  - destacar o **Saldo Final** como elemento visual principal (número grande,
+ *    card `size="hero"`), com Total de Receitas e Total de Despesas como
+ *    cards secundários menores ao lado;
+ *  - indicador Superávit (verde, `saldo >= 0`) / Déficit (vermelho, `< 0`),
+ *    exibido dentro do card do Saldo Final;
  *  - renderizar <DespesasPorCategoriaChart>.
  *
  * Não recebe props. Autenticação já garantida pelo <Layout>.
+ * Cores/tipografia: tokens do tema (ver `src/index.css`).
  */
 import { useEffect, useState } from 'react';
 import { api } from '../services/api.js';
-import { brl } from '../lib/format.js';
 import SummaryCard from '../components/SummaryCard.jsx';
 import DespesasPorCategoriaChart from '../components/DespesasPorCategoriaChart.jsx';
 
@@ -43,41 +44,37 @@ export default function Resumo() {
     };
   }, []);
 
-  if (carregando) return <p className="text-slate-500">Carregando…</p>;
-  if (erro) return <p className="text-red-600">{erro}</p>;
+  if (carregando) return <p className="text-muted">Carregando…</p>;
+  if (erro) return <p className="text-negative">{erro}</p>;
 
   const superavit = resumo.saldo >= 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Resumo</h1>
+      <h1 className="text-lg font-semibold">Resumo</h1>
 
-        {/* Indicador visual Superávit / Déficit */}
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            superavit ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}
-        >
-          {superavit ? '▲ Superávit' : '▼ Déficit'}
-        </span>
-      </div>
+      {/* Saldo Final em destaque (2/3) + cards secundários (1/3) */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="md:col-span-2">
+          <SummaryCard titulo="Saldo Final" value={resumo.saldo} tone="auto" size="hero">
+            {/* Indicador Superávit / Déficit */}
+            <span
+              className={`text-sm font-medium ${superavit ? 'text-positive' : 'text-negative'}`}
+            >
+              {superavit ? '▲ Superávit' : '▼ Déficit'}
+            </span>
+          </SummaryCard>
+        </div>
 
-      {/* Cartões */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SummaryCard titulo="Total de Receitas" valor={brl(resumo.totalReceitas)} cor="verde" />
-        <SummaryCard titulo="Total de Despesas" valor={brl(resumo.totalDespesas)} cor="vermelho" />
-        <SummaryCard
-          titulo="Saldo Final"
-          valor={brl(resumo.saldo)}
-          cor={superavit ? 'verde' : 'vermelho'}
-          destaque
-        />
+        <div className="grid gap-4">
+          <SummaryCard titulo="Total de Receitas" value={resumo.totalReceitas} tone="positive" />
+          <SummaryCard titulo="Total de Despesas" value={resumo.totalDespesas} tone="negative" />
+        </div>
       </div>
 
       {/* Gráfico */}
-      <div className="bg-white rounded-xl shadow p-4">
-        <h2 className="font-semibold mb-3">Despesas por categoria</h2>
+      <div className="rounded border border-border bg-surface p-4">
+        <h2 className="mb-3 text-sm font-medium text-muted">Despesas por categoria</h2>
         <DespesasPorCategoriaChart despesas={despesas} />
       </div>
     </div>

@@ -30,7 +30,7 @@ export default function Registro() {
       rodape={
         <>
           Já tem conta?{' '}
-          <Link to="/login" className="text-brand">
+          <Link to="/login" className="inline-block py-2 text-accent hover:opacity-80">
             Entrar
           </Link>
         </>

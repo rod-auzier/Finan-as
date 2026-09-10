@@ -30,7 +30,7 @@ export default function Login() {
       rodape={
         <>
           Não tem conta?{' '}
-          <Link to="/registro" className="text-brand">
+          <Link to="/registro" className="inline-block py-2 text-accent hover:opacity-80">
             Criar conta
           </Link>
         </>

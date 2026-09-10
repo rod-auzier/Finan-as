@@ -3,18 +3,27 @@
  *
  * Responsabilidades:
  *  - listar as receitas do usuário (GET /api/receitas via useRecurso);
- *  - criar receita (POST /api/receitas) com os campos Fonte, Descrição e Valor;
+ *  - criar receita (POST /api/receitas) com Fonte, Descrição e Valor;
  *  - excluir receita (DELETE /api/receitas/:id);
- *  - exibir o total somado das receitas listadas.
+ *  - exibir o total somado.
  *
- * Não recebe props. Autenticação já garantida pelo <Layout>.
+ * Responsivo (breakpoint `sm` / `md`, padrões do Tailwind):
+ *  - formulário: 1 coluna no mobile, 2 colunas a partir de `sm` (640px);
+ *  - lista: cards empilhados no mobile, tabela a partir de `md` — feito
+ *    pelo <ListaLancamentos>.
+ * Inputs em `text-base` (16px) para não disparar zoom automático no iOS;
+ * botão com altura mínima de 44px.
  */
 import { useMemo, useState } from 'react';
 import { api } from '../services/api.js';
 import { useRecurso } from '../hooks/useRecurso.js';
-import { brl } from '../lib/format.js';
+import Money from '../components/Money.jsx';
+import ListaLancamentos from '../components/ListaLancamentos.jsx';
 
 const FORM_VAZIO = { fonte: '', descricao: '', valor: '' };
+const INPUT =
+  'min-h-[44px] rounded border border-border bg-surface px-3 py-2 text-base text-fg ' +
+  'placeholder:text-muted focus:border-accent focus:outline-none';
 
 export default function Receitas() {
   const { itens: receitas, carregando, erro, recarregar } = useRecurso('/receitas', 'receitas');
@@ -55,97 +64,70 @@ export default function Receitas() {
     recarregar();
   }
 
+  const colunas = [
+    { chave: 'fonte', label: 'Fonte' },
+    { chave: 'descricao', label: 'Descrição', classe: 'text-muted' },
+    {
+      chave: 'valor',
+      label: 'Valor',
+      alinhar: 'right',
+      render: (r) => <Money value={r.valor} tone="positive" />,
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Receitas</h1>
+      <h1 className="text-lg font-semibold">Receitas</h1>
 
-      {/* Formulário */}
-      <form onSubmit={adicionar} className="bg-white rounded-xl shadow p-4 grid gap-3 sm:grid-cols-4">
+      {/* Formulário — 1 coluna no mobile, 2 colunas a partir de `sm`. */}
+      <form
+        onSubmit={adicionar}
+        className="grid gap-3 rounded border border-border bg-surface p-4 sm:grid-cols-2"
+      >
         <input
           placeholder="Fonte"
           value={form.fonte}
           onChange={(e) => setCampo('fonte', e.target.value)}
-          className="border rounded-lg px-3 py-2 sm:col-span-1"
+          className={INPUT}
           required
-        />
-        <input
-          placeholder="Descrição"
-          value={form.descricao}
-          onChange={(e) => setCampo('descricao', e.target.value)}
-          className="border rounded-lg px-3 py-2 sm:col-span-2"
         />
         <input
           type="number"
           step="0.01"
           min="0"
+          inputMode="decimal"
           placeholder="Valor"
           value={form.valor}
           onChange={(e) => setCampo('valor', e.target.value)}
-          className="border rounded-lg px-3 py-2"
+          className={`${INPUT} num`}
           required
         />
-        {erroForm && <p className="text-sm text-red-600 sm:col-span-4">{erroForm}</p>}
+        {/* Descrição ocupa a linha inteira no layout de 2 colunas. */}
+        <input
+          placeholder="Descrição (opcional)"
+          value={form.descricao}
+          onChange={(e) => setCampo('descricao', e.target.value)}
+          className={`${INPUT} sm:col-span-2`}
+        />
+        {erroForm && <p className="text-sm text-negative sm:col-span-2">{erroForm}</p>}
         <button
           disabled={salvando}
-          className="sm:col-span-4 bg-brand hover:bg-brand-dark disabled:opacity-60 text-white rounded-lg py-2"
+          className="min-h-[44px] rounded bg-accent px-4 font-medium text-bg hover:opacity-90 disabled:opacity-60 sm:col-span-2"
         >
           {salvando ? 'Salvando…' : 'Adicionar receita'}
         </button>
       </form>
 
-      {/* Tabela */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        {carregando ? (
-          <p className="p-4 text-slate-500">Carregando…</p>
-        ) : erro ? (
-          <p className="p-4 text-red-600">{erro}</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-left">
-              <tr>
-                <th className="p-3 font-medium">Fonte</th>
-                <th className="p-3 font-medium">Descrição</th>
-                <th className="p-3 font-medium text-right">Valor</th>
-                <th className="p-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {receitas.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="p-4 text-slate-500">
-                    Nenhuma receita cadastrada.
-                  </td>
-                </tr>
-              )}
-              {receitas.map((r) => (
-                <tr key={r._id}>
-                  <td className="p-3 font-medium">{r.fonte}</td>
-                  <td className="p-3 text-slate-600">{r.descricao || '—'}</td>
-                  <td className="p-3 text-right text-green-600">{brl(r.valor)}</td>
-                  <td className="p-3 text-right">
-                    <button
-                      onClick={() => excluir(r._id)}
-                      className="text-slate-400 hover:text-red-600"
-                      aria-label="Excluir"
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t bg-slate-50">
-                <td className="p-3 font-medium" colSpan={2}>
-                  Total
-                </td>
-                <td className="p-3 text-right font-semibold text-green-700">{brl(total)}</td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        )}
-      </div>
+      <ListaLancamentos
+        colunas={colunas}
+        itens={receitas}
+        getId={(r) => r._id}
+        onExcluir={excluir}
+        total={<Money value={total} tone="positive" className="font-medium" />}
+        vazio="Nenhuma receita cadastrada."
+        carregando={carregando}
+        erro={erro}
+      />
     </div>
   );
 }
