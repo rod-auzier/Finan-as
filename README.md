@@ -89,7 +89,7 @@ Finanças/
 │       ├── components/
 │       │   ├── AuthForm.jsx                 # form e-mail+senha (Login e Registro)
 │       │   ├── Layout.jsx                   # sidebar (>=md) / bottom nav (<md) + <Outlet>
-│       │   ├── ListaLancamentos.jsx         # tabela (>=md) / cards empilhados (<md)
+│       │   ├── ListaLancamentos.jsx         # tabela (>=md) / cards (<md) + edição inline
 │       │   ├── Money.jsx                    # valor R$ em fonte mono + tabular-nums
 │       │   ├── SummaryCard.jsx              # cartão de valor agregado (size 'hero' | 'default')
 │       │   └── DespesasPorCategoriaChart.jsx # gráfico de barras Recharts
@@ -121,8 +121,8 @@ Finanças/
         │   └── asyncHandler.js # Encaminha erros de handlers async ao errorHandler
         ├── controllers/
         │   ├── auth.controller.js     # register, login, me
-        │   ├── receita.controller.js  # listar, criar, remover (por userId)
-        │   ├── despesa.controller.js  # listar, criar, remover (por userId)
+        │   ├── receita.controller.js  # listar, criar, atualizar, remover (por userId)
+        │   ├── despesa.controller.js  # listar, criar, atualizar, remover (por userId)
         │   └── resumo.controller.js   # agrega totais (aggregation MongoDB)
         └── routes/
             ├── index.js           # Agrupa as rotas sob /api (+ /health)
@@ -262,14 +262,18 @@ mensagem de erro vinda da API. Ao entrar, vai para `/resumo`.
 ### Receitas (`/receitas`)
 - **Formulário**: `Fonte` (obrigatório), `Descrição` (opcional) e `Valor`
   (obrigatório, ≥ 0). *Adicionar receita* salva e a lista recarrega.
-- **Lista**: tabela no desktop, cards no mobile; **✕** para excluir; total ao fim.
+- **Lista**: tabela no desktop, cards no mobile; total ao fim.
+- **Editar inline** (lápis): os campos da linha viram inputs ali mesmo, com
+  *Salvar* / *Cancelar* (PUT `/api/receitas/:id`). **✕** exclui.
 
 ### Despesas (`/despesas`)
 - **Formulário**: `Descrição` (obrigatório), `Categoria` (select fixo:
   Utilidades, Alimentação, Transporte, Saúde, Lazer, Outros) e `Valor`
   (obrigatório, ≥ 0).
-- **Lista**: descrição, categoria e valor; tabela no desktop, cards no
-  mobile; **✕** para excluir; total ao fim.
+- **Lista**: descrição, categoria e valor; tabela no desktop, cards no mobile;
+  total ao fim.
+- **Editar inline** (lápis): campos viram inputs (`Categoria` continua um
+  select), *Salvar* / *Cancelar* (PUT `/api/despesas/:id`). **✕** exclui.
 
 ### Resumo (`/resumo`)
 - **Saldo Final** em destaque: número grande em fonte monoespaçada, verde se
@@ -428,9 +432,11 @@ todas as queries de receita/despesa filtram por esse `userId`.
 | GET    | `/api/me`             | sim  | header `Bearer`                                    | `200 { user }` · `401` · `404`                       |
 | GET    | `/api/receitas`       | sim  | —                                                 | `200 { receitas: [...] }` (mais recentes primeiro)   |
 | POST   | `/api/receitas`       | sim  | `{ fonte, valor, descricao? }`                     | `201 { receita }` · `400`                            |
+| PUT    | `/api/receitas/:id`   | sim  | `{ fonte, valor, descricao? }`                     | `200 { receita }` · `400` · `404`                    |
 | DELETE | `/api/receitas/:id`   | sim  | —                                                 | `204` · `400` (id inválido) · `404`                  |
 | GET    | `/api/despesas`       | sim  | —                                                 | `200 { despesas: [...] }` (mais recentes primeiro)   |
 | POST   | `/api/despesas`       | sim  | `{ descricao, valor, categoria? }`                 | `201 { despesa }` · `400`                            |
+| PUT    | `/api/despesas/:id`   | sim  | `{ descricao, valor, categoria? }`                 | `200 { despesa }` · `400` · `404`                    |
 | DELETE | `/api/despesas/:id`   | sim  | —                                                 | `204` · `400` (id inválido) · `404`                  |
 | GET    | `/api/resumo`         | sim  | —                                                 | `200 { totalReceitas, totalDespesas, saldo }`        |
 

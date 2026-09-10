@@ -4,6 +4,8 @@
  * Responsabilidades:
  *  - listar as receitas do usuário (GET /api/receitas via useRecurso);
  *  - criar receita (POST /api/receitas) com Fonte, Descrição e Valor;
+ *  - editar receita inline na tabela/card (PUT /api/receitas/:id) — a
+ *    validação em `salvarEdicao` repete a do formulário de criação;
  *  - excluir receita (DELETE /api/receitas/:id);
  *  - exibir o total somado.
  *
@@ -64,13 +66,35 @@ export default function Receitas() {
     recarregar();
   }
 
+  /**
+   * Salva a edição inline de uma receita.
+   * Mesma validação do formulário de criação (fonte obrigatória, valor
+   * numérico ≥ 0). Lança Error com mensagem em caso de problema — o
+   * <ListaLancamentos> exibe a mensagem na própria linha.
+   */
+  async function salvarEdicao(id, rascunho) {
+    const fonte = (rascunho.fonte ?? '').trim();
+    const valorNum = Number(rascunho.valor);
+    if (!fonte) throw new Error('Fonte é obrigatória.');
+    if (rascunho.valor === '' || Number.isNaN(valorNum) || valorNum < 0) {
+      throw new Error('Valor deve ser um número maior ou igual a zero.');
+    }
+    await api.put(`/receitas/${id}`, {
+      fonte,
+      descricao: (rascunho.descricao ?? '').trim(),
+      valor: valorNum,
+    });
+    await recarregar();
+  }
+
   const colunas = [
-    { chave: 'fonte', label: 'Fonte' },
-    { chave: 'descricao', label: 'Descrição', classe: 'text-muted' },
+    { chave: 'fonte', label: 'Fonte', editor: 'text' },
+    { chave: 'descricao', label: 'Descrição', classe: 'text-muted', editor: 'text' },
     {
       chave: 'valor',
       label: 'Valor',
       alinhar: 'right',
+      editor: 'number',
       render: (r) => <Money value={r.valor} tone="positive" />,
     },
   ];
@@ -123,6 +147,7 @@ export default function Receitas() {
         itens={receitas}
         getId={(r) => r._id}
         onExcluir={excluir}
+        aoSalvarEdicao={salvarEdicao}
         total={<Money value={total} tone="positive" className="font-medium" />}
         vazio="Nenhuma receita cadastrada."
         carregando={carregando}

@@ -58,6 +58,51 @@ export async function criarDespesa(req, res) {
 }
 
 /**
+ * Atualiza uma despesa do usuário autenticado (edição inline na tabela).
+ *
+ * @route   PUT /api/despesas/:id
+ * @access  Privado
+ * @param   {import('express').Request} req
+ * @param   {string} req.params.id        — ObjectId da despesa a atualizar.
+ * @param   {object} req.body
+ * @param   {string} req.body.descricao   — o que é a despesa. Obrigatório.
+ * @param   {number} req.body.valor       — quantia a pagar, número ≥ 0. Obrigatório.
+ * @param   {string} [req.body.categoria] — agrupador. Opcional.
+ * @returns {200} `{ despesa: {...} }` — documento já com os novos valores.
+ * @returns {400} `{ message }` — `:id` inválido, ou `descricao`/`valor` ausentes/inválidos
+ *               (mesma validação do POST).
+ * @returns {404} `{ message }` — despesa inexistente OU de outro usuário
+ *               (o filtro por `userId` garante o isolamento).
+ */
+export async function atualizarDespesa(req, res) {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(400).json({ message: 'id inválido' });
+  }
+
+  const { descricao, categoria, valor } = req.body ?? {};
+
+  if (!descricao || valor == null) {
+    return res.status(400).json({ message: 'descricao e valor são obrigatórios' });
+  }
+  const valorNum = Number(valor);
+  if (Number.isNaN(valorNum) || valorNum < 0) {
+    return res.status(400).json({ message: 'valor deve ser um número não-negativo' });
+  }
+
+  const despesa = await Despesa.findOneAndUpdate(
+    { _id: req.params.id, userId: req.userId },
+    { descricao, categoria, valor: valorNum },
+    { new: true, runValidators: true }, // `new`: devolve já atualizado
+  );
+
+  if (!despesa) {
+    return res.status(404).json({ message: 'despesa não encontrada' });
+  }
+
+  return res.json({ despesa });
+}
+
+/**
  * Remove uma despesa do usuário autenticado.
  *
  * @route   DELETE /api/despesas/:id

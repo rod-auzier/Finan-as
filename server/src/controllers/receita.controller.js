@@ -58,6 +58,51 @@ export async function criarReceita(req, res) {
 }
 
 /**
+ * Atualiza uma receita do usuário autenticado (edição inline na tabela).
+ *
+ * @route   PUT /api/receitas/:id
+ * @access  Privado
+ * @param   {import('express').Request} req
+ * @param   {string} req.params.id         — ObjectId da receita a atualizar.
+ * @param   {object} req.body
+ * @param   {string} req.body.fonte        — origem do dinheiro. Obrigatório.
+ * @param   {number} req.body.valor        — quantia recebida, número ≥ 0. Obrigatório.
+ * @param   {string} [req.body.descricao]  — detalhe livre. Opcional.
+ * @returns {200} `{ receita: {...} }` — documento já com os novos valores.
+ * @returns {400} `{ message }` — `:id` inválido, ou `fonte`/`valor` ausentes/inválidos
+ *               (mesma validação do POST).
+ * @returns {404} `{ message }` — receita inexistente OU de outro usuário
+ *               (o filtro por `userId` garante o isolamento).
+ */
+export async function atualizarReceita(req, res) {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(400).json({ message: 'id inválido' });
+  }
+
+  const { fonte, descricao, valor } = req.body ?? {};
+
+  if (!fonte || valor == null) {
+    return res.status(400).json({ message: 'fonte e valor são obrigatórios' });
+  }
+  const valorNum = Number(valor);
+  if (Number.isNaN(valorNum) || valorNum < 0) {
+    return res.status(400).json({ message: 'valor deve ser um número não-negativo' });
+  }
+
+  const receita = await Receita.findOneAndUpdate(
+    { _id: req.params.id, userId: req.userId },
+    { fonte, descricao, valor: valorNum },
+    { new: true, runValidators: true }, // `new`: devolve já atualizado
+  );
+
+  if (!receita) {
+    return res.status(404).json({ message: 'receita não encontrada' });
+  }
+
+  return res.json({ receita });
+}
+
+/**
  * Remove uma receita do usuário autenticado.
  *
  * @route   DELETE /api/receitas/:id

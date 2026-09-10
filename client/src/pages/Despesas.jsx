@@ -5,6 +5,8 @@
  *  - listar as despesas do usuário (GET /api/despesas via useRecurso);
  *  - criar despesa (POST /api/despesas) com Descrição, Categoria e Valor.
  *    Categoria é um <select> limitado a CATEGORIAS_DESPESA;
+ *  - editar despesa inline na tabela/card (PUT /api/despesas/:id) — a
+ *    validação em `salvarEdicao` repete a do formulário de criação;
  *  - excluir despesa (DELETE /api/despesas/:id);
  *  - exibir o total somado.
  *
@@ -66,13 +68,41 @@ export default function Despesas() {
     recarregar();
   }
 
+  /**
+   * Salva a edição inline de uma despesa.
+   * Mesma validação do formulário de criação (descrição obrigatória, valor
+   * numérico ≥ 0). Lança Error com mensagem — o <ListaLancamentos> a exibe
+   * na própria linha.
+   */
+  async function salvarEdicao(id, rascunho) {
+    const descricao = (rascunho.descricao ?? '').trim();
+    const valorNum = Number(rascunho.valor);
+    if (!descricao) throw new Error('Descrição é obrigatória.');
+    if (rascunho.valor === '' || Number.isNaN(valorNum) || valorNum < 0) {
+      throw new Error('Valor deve ser um número maior ou igual a zero.');
+    }
+    await api.put(`/despesas/${id}`, {
+      descricao,
+      categoria: rascunho.categoria || 'Outros',
+      valor: valorNum,
+    });
+    await recarregar();
+  }
+
   const colunas = [
-    { chave: 'descricao', label: 'Descrição' },
-    { chave: 'categoria', label: 'Categoria', classe: 'text-muted' },
+    { chave: 'descricao', label: 'Descrição', editor: 'text' },
+    {
+      chave: 'categoria',
+      label: 'Categoria',
+      classe: 'text-muted',
+      editor: 'select',
+      opcoes: CATEGORIAS_DESPESA,
+    },
     {
       chave: 'valor',
       label: 'Valor',
       alinhar: 'right',
+      editor: 'number',
       render: (d) => <Money value={d.valor} tone="negative" />,
     },
   ];
@@ -130,6 +160,7 @@ export default function Despesas() {
         itens={despesas}
         getId={(d) => d._id}
         onExcluir={excluir}
+        aoSalvarEdicao={salvarEdicao}
         total={<Money value={total} tone="negative" className="font-medium" />}
         vazio="Nenhuma despesa cadastrada."
         carregando={carregando}
