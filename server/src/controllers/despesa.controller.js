@@ -15,7 +15,7 @@ import { Despesa } from '../models/Despesa.js';
  * @access  Privado — header `Authorization: Bearer <token>`
  * @param   {import('express').Request}  req  — usa `req.userId`; ignora body e query
  * @param   {import('express').Response} res
- * @returns {200} `{ despesas: Array<{ _id, userId, descricao, categoria, valor, vencimento, createdAt, updatedAt }> }`
+ * @returns {200} `{ despesas: Array<{ _id, userId, descricao, categoria, valor, createdAt, updatedAt }> }`
  *               ordenado por `createdAt` (mais recentes primeiro).
  */
 export async function listarDespesas(req, res) {
@@ -33,12 +33,11 @@ export async function listarDespesas(req, res) {
  * @param   {string} req.body.descricao      — o que é a despesa (ex.: "Conta de luz"). Obrigatório.
  * @param   {number} req.body.valor          — quantia a pagar, número ≥ 0. Obrigatório.
  * @param   {string} [req.body.categoria]    — agrupador (ex.: "Moradia"). Opcional → "Outros".
- * @param   {string} [req.body.vencimento]   — data de vencimento (ISO 8601, ex.: "2026-10-05"). Opcional.
  * @returns {201} `{ despesa: {...} }` — documento criado.
- * @returns {400} `{ message }` — `descricao`/`valor` ausentes, `valor` inválido ou `vencimento` não-parseável.
+ * @returns {400} `{ message }` — `descricao`/`valor` ausentes ou `valor` inválido.
  */
 export async function criarDespesa(req, res) {
-  const { descricao, categoria, valor, vencimento } = req.body ?? {};
+  const { descricao, categoria, valor } = req.body ?? {};
 
   if (!descricao || valor == null) {
     return res.status(400).json({ message: 'descricao e valor são obrigatórios' });
@@ -48,20 +47,11 @@ export async function criarDespesa(req, res) {
     return res.status(400).json({ message: 'valor deve ser um número não-negativo' });
   }
 
-  let vencimentoData;
-  if (vencimento != null && vencimento !== '') {
-    vencimentoData = new Date(vencimento);
-    if (Number.isNaN(vencimentoData.getTime())) {
-      return res.status(400).json({ message: 'vencimento inválido (use uma data ISO 8601)' });
-    }
-  }
-
   const despesa = await Despesa.create({
     userId: req.userId,
     descricao,
     categoria,
     valor: valorNum,
-    vencimento: vencimentoData,
   });
 
   return res.status(201).json({ despesa });

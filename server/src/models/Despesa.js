@@ -8,7 +8,6 @@
  *  - categoria  : agrupador para relatórios (ex.: "Moradia", "Alimentação").
  *                 Opcional — assume "Outros" quando não informado.
  *  - valor      : quantia a pagar, em número. Obrigatório e não-negativo.
- *  - vencimento : data de vencimento do pagamento. Opcional.
  *  - createdAt  : data de registro da despesa. Gerada automaticamente pelo
  *                 `timestamps` do Mongoose (que também cria `updatedAt`).
  */
@@ -36,9 +35,6 @@ const despesaSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'valor é obrigatório'],
       min: [0, 'valor não pode ser negativo'],
-    },
-    vencimento: {
-      type: Date,
     },
   },
   { timestamps: true },

@@ -3,8 +3,8 @@
  *
  * Responsabilidades:
  *  - listar as despesas do usuário (GET /api/despesas via useRecurso);
- *  - criar despesa (POST /api/despesas) com Descrição, Categoria, Valor e
- *    Vencimento. Categoria é um <select> limitado a CATEGORIAS_DESPESA;
+ *  - criar despesa (POST /api/despesas) com Descrição, Categoria e Valor.
+ *    Categoria é um <select> limitado a CATEGORIAS_DESPESA;
  *  - excluir despesa (DELETE /api/despesas/:id);
  *  - exibir o total somado.
  *
@@ -18,12 +18,11 @@
 import { useMemo, useState } from 'react';
 import { api } from '../services/api.js';
 import { useRecurso } from '../hooks/useRecurso.js';
-import { dataBR } from '../lib/format.js';
 import { CATEGORIAS_DESPESA } from '../lib/constants.js';
 import Money from '../components/Money.jsx';
 import ListaLancamentos from '../components/ListaLancamentos.jsx';
 
-const FORM_VAZIO = { descricao: '', categoria: 'Outros', valor: '', vencimento: '' };
+const FORM_VAZIO = { descricao: '', categoria: 'Outros', valor: '' };
 const INPUT =
   'min-h-[44px] rounded border border-border bg-surface px-3 py-2 text-base text-fg ' +
   'placeholder:text-muted focus:border-accent focus:outline-none';
@@ -48,13 +47,11 @@ export default function Despesas() {
     setErroForm('');
     setSalvando(true);
     try {
-      const payload = {
+      await api.post('/despesas', {
         descricao: form.descricao,
         categoria: form.categoria,
         valor: Number(form.valor),
-      };
-      if (form.vencimento) payload.vencimento = form.vencimento; // ISO "aaaa-mm-dd"
-      await api.post('/despesas', payload);
+      });
       setForm(FORM_VAZIO);
       await recarregar();
     } catch (err) {
@@ -72,12 +69,6 @@ export default function Despesas() {
   const colunas = [
     { chave: 'descricao', label: 'Descrição' },
     { chave: 'categoria', label: 'Categoria', classe: 'text-muted' },
-    {
-      chave: 'vencimento',
-      label: 'Vencimento',
-      classe: 'text-muted num',
-      render: (d) => <span className="num">{dataBR(d.vencimento)}</span>,
-    },
     {
       chave: 'valor',
       label: 'Valor',
@@ -125,15 +116,6 @@ export default function Despesas() {
           className={`${INPUT} num`}
           required
         />
-        <label className="text-sm text-muted sm:col-span-2">
-          Vencimento
-          <input
-            type="date"
-            value={form.vencimento}
-            onChange={(e) => setCampo('vencimento', e.target.value)}
-            className={`${INPUT} mt-1 w-full`}
-          />
-        </label>
         {erroForm && <p className="text-sm text-negative sm:col-span-2">{erroForm}</p>}
         <button
           disabled={salvando}

@@ -77,7 +77,7 @@ Finanças/
 │       ├── App.jsx             # Mapa de rotas (públicas + privadas sob Layout)
 │       ├── index.css           # ★ TOKENS DE COR (:root) + base + regras do Recharts
 │       ├── lib/
-│       │   ├── format.js       # brl() e dataBR()
+│       │   ├── format.js       # brl()
 │       │   ├── constants.js    # CATEGORIAS_DESPESA + paleta do gráfico
 │       │   └── theme.js        # token('surface') → lê CSS var em runtime (p/ Recharts)
 │       ├── hooks/
@@ -113,7 +113,7 @@ Finanças/
         ├── models/
         │   ├── User.js         # { email único, senha (hash bcrypt via bcryptjs) }
         │   ├── Receita.js      # { userId, fonte, descricao, valor, createdAt }
-        │   └── Despesa.js      # { userId, descricao, categoria, valor, vencimento, createdAt }
+        │   └── Despesa.js      # { userId, descricao, categoria, valor, createdAt }
         ├── middlewares/
         │   ├── auth.js         # Valida JWT → injeta req.userId
         │   └── errorHandler.js # 404 + handler de erros padronizado
@@ -266,10 +266,10 @@ mensagem de erro vinda da API. Ao entrar, vai para `/resumo`.
 
 ### Despesas (`/despesas`)
 - **Formulário**: `Descrição` (obrigatório), `Categoria` (select fixo:
-  Utilidades, Alimentação, Transporte, Saúde, Lazer, Outros), `Valor`
-  (obrigatório, ≥ 0) e `Vencimento` (data, opcional).
-- **Lista**: descrição, categoria, vencimento (`—` quando vazio) e valor;
-  tabela no desktop, cards no mobile; **✕** para excluir; total ao fim.
+  Utilidades, Alimentação, Transporte, Saúde, Lazer, Outros) e `Valor`
+  (obrigatório, ≥ 0).
+- **Lista**: descrição, categoria e valor; tabela no desktop, cards no
+  mobile; **✕** para excluir; total ao fim.
 
 ### Resumo (`/resumo`)
 - **Saldo Final** em destaque: número grande em fonte monoespaçada, verde se
@@ -430,7 +430,7 @@ todas as queries de receita/despesa filtram por esse `userId`.
 | POST   | `/api/receitas`       | sim  | `{ fonte, valor, descricao? }`                     | `201 { receita }` · `400`                            |
 | DELETE | `/api/receitas/:id`   | sim  | —                                                 | `204` · `400` (id inválido) · `404`                  |
 | GET    | `/api/despesas`       | sim  | —                                                 | `200 { despesas: [...] }` (mais recentes primeiro)   |
-| POST   | `/api/despesas`       | sim  | `{ descricao, valor, categoria?, vencimento? }`    | `201 { despesa }` · `400`                            |
+| POST   | `/api/despesas`       | sim  | `{ descricao, valor, categoria? }`                 | `201 { despesa }` · `400`                            |
 | DELETE | `/api/despesas/:id`   | sim  | —                                                 | `204` · `400` (id inválido) · `404`                  |
 | GET    | `/api/resumo`         | sim  | —                                                 | `200 { totalReceitas, totalDespesas, saldo }`        |
 

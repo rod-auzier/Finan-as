@@ -9,13 +9,3 @@ export function brl(valor) {
     currency: 'BRL',
   });
 }
-
-/**
- * Formata uma data ISO como dd/mm/aaaa. Retorna "—" quando vazia.
- * Usa `timeZone: 'UTC'` porque o vencimento é uma data "de calendário"
- * (sem hora) — sem isso, fusos negativos exibiriam o dia anterior.
- */
-export function dataBR(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-}
